@@ -1,0 +1,13 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Generate compile_commands.json",
+            "type": "shell",
+            "command": "platformio",
+            "args": ["run", "-t", "compiledb", "--environment", "esp32s3"],
+            "group": "none",
+            "presentation": { "reveal": "silent" }
+        }
+    ]
+}

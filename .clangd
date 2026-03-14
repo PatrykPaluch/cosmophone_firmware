@@ -1,20 +1,6 @@
 CompileFlags:
-  CompilationDatabase: .
-  Add:
-    - --include-directory=C:/Users/Bartosz/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/qio_opi/include
-    - -include
-    - C:/Users/Bartosz/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/qio_opi/include/sdkconfig.h
-  Remove:
-    - -mlongcalls
-    - -mfix-esp32-psram-cache-issue
-    - -mfix-esp32-psram-cache-strategy*
-    - -fstrict-volatile-bitfields
-    - -fno-tree-switch-conversion
-    - -fno-jump-tables
-    - -Wno-frame-address
+  Add: ['-D__XTENSA__']
+  Remove: ['-mlongcalls', '-fstrict-volatile-bitfields', '-fno-tree-switch-conversion']
 
 Diagnostics:
-  Suppress:
-    - pp_file_not_found
-    - drv_unknown_argument
-    - drv_unknown_argument_with_suggestion
+  Suppress: ['pp_file_not_found']

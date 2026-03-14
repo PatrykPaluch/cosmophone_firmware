@@ -3,6 +3,9 @@
 #include "touch.h"
 #include <Arduino.h>
 
+namespace apps {
+namespace flapbird {
+
 // ── Layout ────────────────────────────────────────────────────────────────────
 static const int   SCR_W      = 480;
 static const int   GROUND_Y   = 430;   // y-coord where ground begins
@@ -74,21 +77,16 @@ static void initPipes() {
 }
 
 // ── Low-level draw ────────────────────────────────────────────────────────────
-
-// Draw or erase the bird at y.  The beak sticks out BEAK_W to the right.
 static void drawBirdAt(int y) {
     int cy = max(0, y);
     int ch = min(GROUND_Y, y + BIRD_H) - cy;
     if (ch <= 0) return;
     gfx->fillRoundRect(BIRD_X, y, BIRD_W, BIRD_H, 8, C_BIRD);
-    // Eye
     gfx->fillCircle(BIRD_X + BIRD_W - 10, y + 9, 5, C_EYEW);
     gfx->fillCircle(BIRD_X + BIRD_W - 9,  y + 9, 3, C_EYEP);
-    // Beak
     gfx->fillRect(BIRD_X + BIRD_W, y + BIRD_H / 2 - 4, BEAK_W, 8, C_BEAK);
 }
 
-// Restore pipe pixels that fall inside the rectangle (rx,ry,rw,rh).
 static void restorePipesInRegion(int rx, int ry, int rw, int rh) {
     for (int i = 0; i < N_PIPES; i++) {
         int px = (int)pipes[i].x;
@@ -96,11 +94,9 @@ static void restorePipesInRegion(int rx, int ry, int rw, int rh) {
         int ow = min(rx + rw, px + PIPE_W) - ox;
         if (ow <= 0) continue;
 
-        // Top pipe section
         int oh1 = min(ry + rh, pipes[i].gapY) - max(ry, 0);
         if (oh1 > 0) gfx->fillRect(ox, max(ry, 0), ow, oh1, C_PIPE);
 
-        // Bottom pipe section
         int botTop = pipes[i].gapY + PIPE_GAP;
         int oy2    = max(ry, botTop);
         int oh2    = min(ry + rh, GROUND_Y) - oy2;
@@ -112,37 +108,30 @@ static void eraseBird(int y) {
     int ey = max(0, y);
     int eh = min(GROUND_Y, y + BIRD_H) - ey;
     if (eh <= 0) return;
-    // Fill with sky over the whole bird+beak area
     gfx->fillRect(BIRD_X, ey, BIRD_W + BEAK_W, eh, C_SKY);
-    // Restore any pipe pixels that were hiding behind the bird
     restorePipesInRegion(BIRD_X, ey, BIRD_W + BEAK_W, eh);
 }
 
-// Move a single pipe one step and draw only the changed pixel strips.
 static void stepPipe(Pipe &p) {
     int oldX = (int)p.x;
     p.x -= PIPE_SPEED;
     int newX = (int)p.x;
 
-    // Score: pipe centre passed bird centre
     if (!p.passed && newX + PIPE_W < BIRD_X + BIRD_W / 2) {
         p.passed = true;
         score++;
     }
 
-    // Recycle when fully off-screen left
     if (newX + PIPE_W < 0) {
         resetPipe(p, rightmostPipeX() + PIPE_SPACE);
         return;
     }
-    // Still entirely off-screen right — nothing to draw yet
     if (newX >= SCR_W) return;
 
     int gapY   = p.gapY;
     int botTop = gapY + PIPE_GAP;
     int botH   = GROUND_Y - botTop;
 
-    // ── Trailing strip: right edge of pipe now exposes sky ───────────────────
     {
         int tx = max(0, newX + PIPE_W);
         int tw = min(SCR_W, oldX + PIPE_W) - tx;
@@ -152,10 +141,8 @@ static void stepPipe(Pipe &p) {
         }
     }
 
-    // ── Leading strip: left edge of pipe moves into fresh sky ────────────────
     {
         int lx = max(0, newX);
-        // Pixels newly covered = from newX to min(oldX, SCR_W)
         int lw = min(SCR_W, (oldX >= SCR_W ? newX + PIPE_W : oldX)) - lx;
         if (lw > 0) {
             if (gapY > 0) gfx->fillRect(lx, 0,      lw, gapY, C_PIPE);
@@ -168,31 +155,25 @@ static void stepPipes() {
     for (int i = 0; i < N_PIPES; i++) stepPipe(pipes[i]);
 }
 
-// ── HUD (score) ───────────────────────────────────────────────────────────────
 static void drawHUD() {
-    // Dark pill behind score so it's always readable over pipes/sky
     gfx->fillRoundRect(SCR_W / 2 - 55, 6, 110, 42, 10, C_HUD_BG);
     gfx->setTextColor(C_TEXT);
     gfx->setTextSize(3);
-    // Centre the digit(s)
     int digits = score < 10 ? 1 : score < 100 ? 2 : 3;
     gfx->setCursor(SCR_W / 2 - digits * 9, 12);
     gfx->printf("%d", score);
 }
 
-// ── Static background ─────────────────────────────────────────────────────────
 static void drawBackground() {
     gfx->fillRect(0, 0,        SCR_W, GROUND_Y,            C_SKY);
     gfx->fillRect(0, GROUND_Y, SCR_W, SCR_W - GROUND_Y,    C_GND);
     gfx->fillRect(0, GROUND_Y, SCR_W, 12,                  C_GRASS);
 }
 
-// ── Collision detection ───────────────────────────────────────────────────────
 static bool collides() {
     if (birdY + BIRD_H >= GROUND_Y) return true;
     if (birdY          <= 0)        return true;
 
-    // Shrink hitbox slightly for fairness
     int bLeft  = BIRD_X + 4;
     int bRight = BIRD_X + BIRD_W - 4;
     int bTop   = (int)birdY + 4;
@@ -207,8 +188,6 @@ static bool collides() {
     return false;
 }
 
-// ── Game-over overlay ─────────────────────────────────────────────────────────
-// Returns true = play again, false = back to menu.
 static bool showGameOver() {
     if (score > bestScore) bestScore = score;
 
@@ -216,7 +195,7 @@ static bool showGameOver() {
     gfx->fillRoundRect(OX, OY, OW, OH, 18, 0x2945);
     gfx->drawRoundRect(OX, OY, OW, OH, 18, C_TEXT);
 
-    gfx->setTextColor(0xF800);   // red
+    gfx->setTextColor(0xF800);
     gfx->setTextSize(4);
     gfx->setCursor(OX + 28, OY + 14);
     gfx->print("GAME OVER");
@@ -226,7 +205,6 @@ static bool showGameOver() {
     gfx->setCursor(OX + 20, OY + 70);
     gfx->printf("Score: %d   Best: %d", score, bestScore);
 
-    // Buttons
     static const int BW = 130, BH = 44;
     int by  = OY + OH - BH - 14;
     int bx1 = OX + 10;
@@ -238,11 +216,10 @@ static bool showGameOver() {
     gfx->setCursor(bx1 + 8,  by + 12); gfx->print("PLAY AGAIN");
     gfx->setCursor(bx2 + 30, by + 12); gfx->print("MENU");
 
-    // Wait for tap
     bool prevTouched = false;
     while (true) {
         int tx, ty;
-        bool touched = getTouch(tx, ty);
+        bool touched = sys::touch::getTouch(tx, ty);
         if (touched && !prevTouched) {
             if (tx >= bx1 && tx < bx1 + BW && ty >= by && ty < by + BH) return true;
             if (tx >= bx2 && tx < bx2 + BW && ty >= by && ty < by + BH) return false;
@@ -252,7 +229,6 @@ static bool showGameOver() {
     }
 }
 
-// ── Init / reset ──────────────────────────────────────────────────────────────
 static void initGame() {
     birdY     = 190.0f;
     birdVel   = 0.0f;
@@ -265,7 +241,6 @@ static void initGame() {
     drawBackground();
     drawHUD();
 
-    // "TAP TO START" prompt
     gfx->setTextColor(C_TEXT);
     gfx->setTextSize(3);
     gfx->setCursor(104, 330);
@@ -275,75 +250,66 @@ static void initGame() {
     lastFrameMs = millis();
 }
 
-// ── Public entry point ────────────────────────────────────────────────────────
-void runFlappyBird() {
-    displayBeginFrame();
+void run() {
+    sys::display::beginFrame();
     initGame();
-    displayEndFrame();
+    sys::display::endFrame();
 
     bool prevTouched = false;
 
     while (true) {
         int  tx, ty;
-        bool touched     = getTouch(tx, ty);
+        bool touched     = sys::touch::getTouch(tx, ty);
         bool justTouched = touched && !prevTouched;
         prevTouched      = touched;
 
-        // ── Game-over screen ─────────────────────────────────────────────────
-        // showGameOver() draws its overlay directly to the display FB
-        // (gfx is back to display FB after the last displayEndFrame).
         if (dead) {
             bool restart = showGameOver();
             if (restart) {
-                displayBeginFrame();
+                sys::display::beginFrame();
                 initGame();
-                displayEndFrame();
+                sys::display::endFrame();
                 prevTouched = false;
-            } else return;   // back to menu
+            } else return;
             continue;
         }
 
-        // ── Waiting for first tap ─────────────────────────────────────────────
         if (waitStart) {
             if (justTouched) {
                 waitStart = false;
                 birdVel   = FLAP_VEL;
-                // Erase the prompt text via the back buffer so the display
-                // never shows a half-erased state.
-                displayBeginFrame();
+                sys::display::beginFrame();
                 gfx->fillRect(90, 320, 310, 44, C_SKY);
-                displayEndFrame();
+                sys::display::endFrame();
             }
             delay(16);
             continue;
         }
 
-        // ── Frame throttle ────────────────────────────────────────────────────
         unsigned long now = millis();
         if (now - lastFrameMs < FRAME_MS) { delay(4); continue; }
         lastFrameMs = now;
 
-        // ── Input ─────────────────────────────────────────────────────────────
         if (justTouched) birdVel = FLAP_VEL;
 
-        // ── Physics ───────────────────────────────────────────────────────────
         birdVel += GRAVITY;
         if (birdVel > MAX_FALL) birdVel = MAX_FALL;
         birdY  += birdVel;
 
         int newBirdY = (int)birdY;
 
-        // ── Render entire frame into back buffer, then diff-flush ─────────────
-        displayBeginFrame();
-        eraseBird(prevBirdY);   // clear old bird, restore pipe pixels
-        stepPipes();            // scroll all pipes one step
-        drawHUD();              // score always on top
-        drawBirdAt(newBirdY);   // draw bird on top of everything
-        displayEndFrame();
+        sys::display::beginFrame();
+        eraseBird(prevBirdY);
+        stepPipes();
+        drawHUD();
+        drawBirdAt(newBirdY);
+        sys::display::endFrame();
 
         prevBirdY = newBirdY;
 
-        // ── Collision ─────────────────────────────────────────────────────────
         if (collides()) dead = true;
     }
 }
+
+}  // namespace flapbird
+}  // namespace apps

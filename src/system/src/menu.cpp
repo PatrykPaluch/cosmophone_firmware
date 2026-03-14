@@ -2,6 +2,9 @@
 #include "display.h"
 #include "touch.h"
 
+namespace sys {
+namespace menu {
+
 // ── Palette ───────────────────────────────────────────────────────────────────
 static const uint16_t M_BG      = 0x0841;  // very dark blue-grey
 static const uint16_t M_TITLE   = 0x07FF;  // cyan
@@ -23,13 +26,10 @@ static const MenuItem ITEMS[] = {
     { "SNAKE",       "Classic snake game",       0x07E0, AppMode::SNAKE       },
     { "FLAPPY BIRD", "Tap to flap!",             0xFFE0, AppMode::FLAPPY      },
     { "RAINBOW",     "Scrolling rainbow demo",   0xF81F, AppMode::RAINBOW     },
-    { "COLOR FLASH", "Hue cycle at max speed",   0x07FF, AppMode::COLOR_FLASH },
 };
 static const int N_ITEMS = sizeof(ITEMS) / sizeof(ITEMS[0]);
 
 // ── Layout ────────────────────────────────────────────────────────────────────
-// 4 buttons × 70 px + 3 gaps × 10 px = 310 px; header 90 px + 10 px margin
-// leaves 480 - 400 = 80 px footer space.
 static const int HEADER_H    = 90;
 static const int BTN_W       = 400;
 static const int BTN_H       = 70;
@@ -42,13 +42,11 @@ static void drawHeader() {
     gfx->fillRect(0, 0, 480, HEADER_H, 0x1082);
     gfx->drawFastHLine(0, HEADER_H, 480, M_TITLE);
 
-    // Title — textSize 4: each char ≈ 24px wide, 32px tall
     gfx->setTextColor(M_TITLE);
     gfx->setTextSize(4);
     gfx->setCursor((480 - 10 * 24) / 2, 12);
     gfx->print("COSMOPHONE");
 
-    // Subtitle
     gfx->setTextColor(M_SUB);
     gfx->setTextSize(2);
     gfx->setCursor((480 - 12 * 12) / 2, 58);
@@ -63,16 +61,13 @@ static void drawItem(int idx, bool highlighted) {
     gfx->fillRoundRect(BTN_X, y, BTN_W, BTN_H, 14, bg);
     gfx->drawRoundRect(BTN_X, y, BTN_W, BTN_H, 14, M_BTN_BDR);
 
-    // Colour swatch on left
     gfx->fillRoundRect(BTN_X + 12, y + 10, 50, 50, 8, item.iconColor);
 
-    // Label
     gfx->setTextColor(M_TEXT);
     gfx->setTextSize(3);
     gfx->setCursor(BTN_X + 78, y + 10);
     gfx->print(item.label);
 
-    // Subtitle
     gfx->setTextColor(M_SUB);
     gfx->setTextSize(1);
     gfx->setCursor(BTN_X + 80, y + 48);
@@ -84,20 +79,18 @@ static void drawMenu() {
     drawHeader();
     for (int i = 0; i < N_ITEMS; i++) drawItem(i, false);
 
-    // Footer
     gfx->setTextColor(0x4208);
     gfx->setTextSize(1);
     gfx->setCursor(4, 472);
     gfx->print("v1.0  |  Touch a game to launch");
 }
 
-// ── Entry point ───────────────────────────────────────────────────────────────
 AppMode showMenu() {
     drawMenu();
 
     while (true) {
         int tx, ty;
-        if (!getTouch(tx, ty)) { delay(10); continue; }
+        if (!sys::touch::getTouch(tx, ty)) { delay(10); continue; }
 
         for (int i = 0; i < N_ITEMS; i++) {
             int y = BTN_START_Y + i * (BTN_H + BTN_GAP);
@@ -111,3 +104,6 @@ AppMode showMenu() {
         delay(10);
     }
 }
+
+}  // namespace menu
+}  // namespace sys

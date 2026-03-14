@@ -2,6 +2,9 @@
 #include "display.h"
 #include "touch.h"
 
+namespace apps {
+namespace snake {
+
 // ── Layout ────────────────────────────────────────────────────────────────────
 static const int CELL    = 20;
 static const int COLS    = 24;
@@ -123,7 +126,7 @@ static bool showGameOver() {
 
     while (true) {
         int tx, ty;
-        if (!getTouch(tx, ty)) { delay(10); continue; }
+        if (!sys::touch::getTouch(tx, ty)) { delay(10); continue; }
         if (tx >= OX + 10 && tx < OX + 10 + BW &&
             ty >= BY       && ty < BY + BH) return true;   // restart
         if (tx >= OX + OW - BW - 10 && tx < OX + OW - 10 &&
@@ -154,25 +157,22 @@ static void initGame() {
     gameOver   = false;
 }
 
-// ── Public entry point ────────────────────────────────────────────────────────
-void runSnake() {
-    displayBeginFrame();
+void run() {
+    sys::display::beginFrame();
     initGame();
-    displayEndFrame();
+    sys::display::endFrame();
 
     while (true) {
         int tx, ty;
-        bool touched = getTouch(tx, ty);
+        bool touched = sys::touch::getTouch(tx, ty);
 
         if (gameOver) {
-            // showGameOver() draws its overlay directly to the display FB
-            // (gfx is back to display FB after the last displayEndFrame).
             bool restart = showGameOver();
             if (restart) {
-                displayBeginFrame();
+                sys::display::beginFrame();
                 initGame();
-                displayEndFrame();
-            } else return;   // back to menu
+                sys::display::endFrame();
+            } else return;
             continue;
         }
 
@@ -198,8 +198,7 @@ void runSnake() {
         }
         if (gameOver) continue;
 
-        // ── Render the whole move into the back buffer, then diff-flush ───────
-        displayBeginFrame();
+        sys::display::beginFrame();
 
         if (!ate) {
             fillCell(sx[sLen - 1], sy[sLen - 1], C_BG);
@@ -216,6 +215,9 @@ void runSnake() {
         sx[0] = nx;  sy[0] = ny;
         fillCell(nx, ny, C_HEAD);
 
-        displayEndFrame();
+        sys::display::endFrame();
     }
 }
+
+}  // namespace snake
+}  // namespace apps
