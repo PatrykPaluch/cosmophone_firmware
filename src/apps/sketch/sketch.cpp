@@ -158,6 +158,7 @@ void run() {
     int picked_color = -1;
 
     while (true) {
+        fb = sys::display::getBufferedFramebuffer();
         sys::touch::Point t = {0, 0};
         const bool touching = sys::touch::getTouch(t);
 

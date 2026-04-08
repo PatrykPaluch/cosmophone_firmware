@@ -10,8 +10,13 @@
 void setup() {
     Serial0.begin(115200);
     Serial0.println(F("CosmoPhone: setup start"));
-    Serial0.flush();
-    
+    Serial0.println(">>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<");
+    Serial0.printf("ESP.getSdkVersion() = %s\n", ESP.getSdkVersion());
+    Serial0.printf("ESP.getChipModel() = %s\n", ESP.getChipModel());
+    Serial0.printf("ESP.getFreeHeap() = %d\n", ESP.getFreeHeap());
+    Serial0.println(">>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<");
+
+    delay(500);
     sys::fs::init(true);
     sys::userconfig::init();
     sys::display::init();

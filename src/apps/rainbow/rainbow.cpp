@@ -38,11 +38,12 @@ void run() {
         extPal[i] = extPal[i + 480] = hsv565(i * 360 / 480);
     }
 
-    uint16_t *fb   = sys::display::getDirectFramebuffer();
+    uint16_t *fb;
     int       offs = 0;
     bool      prev = false;
 
     while (!sys::touch::isTouched()) {
+        fb = sys::display::getDirectFramebuffer();
         uint16_t *row = &extPal[offs];
         for (int y = 0; y < H; y++) {
             memcpy(fb + y * W, row, W * 2);

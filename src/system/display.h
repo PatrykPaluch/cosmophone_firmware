@@ -1,15 +1,11 @@
 #pragma once
-#include <Arduino_GFX_Library.h>
+#include <display/Arduino_RGB_Display.h>
+#include <sys/types.h>
 
 namespace sys {
 namespace display {
 
 void init();
-
-// All gfx draw calls write to an offscreen backbuffer.
-// Call flush() to push only the changed rows to the visible display.
-// This prevents partial-draw flashing.
-void flush();
 
 // Standard back button (top-left). Draw it, then use backButtonTapped(tx, ty) in your touch loop.
 void drawBackButton(uint16_t bg = 0x2145, uint16_t border = 0x07FF, uint16_t textColor = 0xFFFF);
