@@ -23,4 +23,9 @@ void flush();
 }  // namespace sys
 
 // Convenience: global gfx pointer for drawing.
+#ifdef NEW_DISPLAY_TEST
+#include "system/experiments/new_display/gfx.hpp"
+extern sys::display::GFX *gfx;
+#else
 extern Arduino_GFX *gfx;
+#endif

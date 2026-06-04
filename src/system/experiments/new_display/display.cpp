@@ -11,8 +11,6 @@
 
 namespace {
 
-static sys::display::GFX *new_display_gfx = nullptr;
-
 typedef struct {
     int cmd;                
     const uint8_t *data;   
@@ -204,7 +202,6 @@ void init() {
     rgb_display->begin();
 
     gfx = rgb_display;
-    new_display_gfx = rgb_display;
 }
 
 
@@ -212,14 +209,14 @@ void init() {
 void drawBackButton(uint16_t bg, uint16_t border, uint16_t textColor) {}
 bool backButtonTapped(int tx, int ty) {return false;}
 
-uint16_t *getCurrentFramebuffer() { return new_display_gfx->getCurrentFramebuffer(); }
+uint16_t *getCurrentFramebuffer() { return gfx->getCurrentFramebuffer(); }
 
 void startFrame() {
-    new_display_gfx->startFrame();
+    gfx->startFrame();
 }
 
 void endFrame() {
-    new_display_gfx->endFrame();
+    gfx->endFrame();
 }
 
 void flush() {
@@ -245,4 +242,4 @@ void flushDirect() {
 }  // namespace sys
 
 // Convenience: global gfx pointer for drawing.
-Arduino_GFX *gfx = nullptr;
+sys::display::GFX *gfx = nullptr;
